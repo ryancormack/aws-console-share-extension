@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>AWS Console Link Sharer - Options</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AWS Console Link Sharer</h1>
+            <p>Configure your extension settings</p>
+        </header>
+
+        <main>
+            <form id="optionsForm">
+                <div class="form-group">
+                    <label for="ssoSubdomain">AWS SSO Subdomain *</label>
+                    <input 
+                        type="text" 
+                        id="ssoSubdomain" 
+                        name="ssoSubdomain" 
+                        placeholder="your-org" 
+                        required
+                        aria-describedby="ssoSubdomainHelp ssoSubdomainError"
+                    >
+                    <div id="ssoSubdomainHelp" class="help-text">
+                        Enter your organization's AWS SSO subdomain (e.g., "your-org" for https://your-org.awsapps.com)
+                    </div>
+                    <div id="ssoSubdomainError" class="error-message" role="alert" aria-live="polite"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="defaultAction">Default Action</label>
+                    <select id="defaultAction" name="defaultAction" aria-describedby="defaultActionHelp">
+                        <option value="clean">Clean URL</option>
+                        <option value="deeplink">Generate Deep Link</option>
+                    </select>
+                    <div id="defaultActionHelp" class="help-text">
+                        Choose which action to highlight by default in the popup
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="roleSelectionStrategy">Role Selection Strategy</label>
+                    <select id="roleSelectionStrategy" name="roleSelectionStrategy" aria-describedby="roleSelectionHelp">
+                        <option value="current">Use Current Logged-in Role</option>
+                        <option value="default">Use Default Role</option>
+                        <option value="account-map">Use Account-Role Mapping</option>
+                    </select>
+                    <div id="roleSelectionHelp" class="help-text">
+                        Choose how to determine the role name for deep links
+                    </div>
+                </div>
+
+                <div class="form-group" id="defaultRoleGroup" style="display: none;">
+                    <label for="defaultRoleName">Default Role Name</label>
+                    <input 
+                        type="text" 
+                        id="defaultRoleName" 
+                        name="defaultRoleName" 
+                        placeholder="e.g., PlatformAdministratorAccess"
+                        aria-describedby="defaultRoleHelp defaultRoleError"
+                    >
+                    <div id="defaultRoleHelp" class="help-text">
+                        Role name to use when "Use Default Role" is selected or as fallback for account mapping
+                    </div>
+                    <div id="defaultRoleError" class="error-message" role="alert" aria-live="polite"></div>
+                </div>
+
+                <div class="form-group" id="accountRoleMapGroup" style="display: none;">
+                    <label for="accountRoleMap">Account-Role Mapping</label>
+                    <textarea 
+                        id="accountRoleMap" 
+                        name="accountRoleMap" 
+                        rows="4"
+                        placeholder="123456789012:PlatformAdministratorAccess&#10;987654321098:DeveloperAccess&#10;555666777888:ReadOnlyAccess"
+                        aria-describedby="accountRoleMapHelp accountRoleMapError"
+                    ></textarea>
+                    <div id="accountRoleMapHelp" class="help-text">
+                        Enter account ID and role pairs, one per line, separated by colon (AccountID:RoleName)
+                    </div>
+                    <div id="accountRoleMapError" class="error-message" role="alert" aria-live="polite"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="showNotifications" name="showNotifications">
+                        <span class="checkmark"></span>
+                        Show success notifications
+                    </label>
+                    <div class="help-text">
+                        Display confirmation messages when URLs are copied to clipboard
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="autoClosePopup" name="autoClosePopup">
+                        <span class="checkmark"></span>
+                        Auto-close popup after action
+                    </label>
+                    <div class="help-text">
+                        Automatically close the popup after successfully copying a URL
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="saveButton" class="primary">Save Settings</button>
+                    <button type="button" id="resetButton" class="secondary">Reset to Defaults</button>
+                </div>
+            </form>
+
+            <div id="statusMessage" class="status-message" role="alert" aria-live="polite"></div>
+        </main>
+
+        <footer>
+            <p>Need help? Check the <a href="#" id="helpLink">documentation</a> or report issues on GitHub.</p>
+        </footer>
+    </div>
+
+    <script type="module" src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "aws-console-link-sharer",
+  "version": "1.0.0",
+  "description": "Chrome extension for sharing AWS Console links with URL cleaning and deep link generation",
+  "scripts": {
+    "build": "npm run clean && tsc && npm run copy-assets",
+    "copy-assets": "cp src/manifest.json dist/ && cp -r src/icons dist/ && cp src/popup/popup.html dist/popup/ && cp src/popup/popup.css dist/popup/ && cp src/options/options.html dist/options/ && cp src/options/options.css dist/options/",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.329",
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.4"
+  },
+  "private": true
+}

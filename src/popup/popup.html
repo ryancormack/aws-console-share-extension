@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Console Link Sharer</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>AWS Console Link Sharer</h1>
+        </header>
+
+        <main class="main-content">
+            <!-- Current URL Display -->
+            <section class="url-section">
+                <label for="current-url" class="section-label">Current URL:</label>
+                <div class="url-display" id="current-url" aria-live="polite">
+                    Loading...
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <section class="actions-section">
+                <button 
+                    id="clean-url-btn" 
+                    class="action-button primary"
+                    type="button"
+                    aria-describedby="clean-url-help">
+                    Clean URL
+                </button>
+                <div id="clean-url-help" class="button-help">
+                    Remove account-specific prefixes from the URL
+                </div>
+
+                <button 
+                    id="generate-deeplink-btn" 
+                    class="action-button secondary"
+                    type="button"
+                    aria-describedby="deeplink-help">
+                    Generate Deep Link
+                </button>
+                <div id="deeplink-help" class="button-help">
+                    Create AWS SSO deep link for cross-account access
+                </div>
+            </section>
+
+            <!-- Result Display Area -->
+            <section class="result-section" id="result-section" style="display: none;">
+                <label for="result-url" class="section-label">Generated URL:</label>
+                <div class="result-container">
+                    <textarea 
+                        id="result-url" 
+                        class="result-textarea" 
+                        readonly
+                        aria-label="Generated URL result"
+                        rows="3"></textarea>
+                    <button 
+                        id="copy-btn" 
+                        class="copy-button"
+                        type="button"
+                        aria-label="Copy URL to clipboard">
+                        Copy
+                    </button>
+                </div>
+            </section>
+
+            <!-- Error/Success Messages -->
+            <div id="message-area" class="message-area" role="alert" aria-live="assertive">
+                <!-- Messages will be inserted here -->
+            </div>
+        </main>
+
+        <footer class="footer">
+            <a href="../options/options.html" class="settings-link" target="_blank">
+                Settings
+            </a>
+        </footer>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>
