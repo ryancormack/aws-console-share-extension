@@ -198,44 +198,14 @@ async function saveSettings(config: ExtensionConfig): Promise<void> {
  */
 function validateSubdomain(subdomain: string): ValidationResult {
   const errors: string[] = [];
-
-  if (!subdomain || subdomain.trim().length === 0) {
-    errors.push("AWS SSO subdomain is required");
-    return { valid: false, errors };
-  }
-
   const trimmed = subdomain.trim();
 
-  // Check basic format
-  const subdomainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/;
-  if (!subdomainRegex.test(trimmed)) {
-    errors.push(
-      "Subdomain must contain only letters, numbers, and hyphens, and cannot start or end with a hyphen"
-    );
-  }
-
-  // Check length constraints
-  if (trimmed.length < 2) {
-    errors.push("Subdomain must be at least 2 characters long");
-  }
-
-  if (trimmed.length > 63) {
-    errors.push("Subdomain must be no more than 63 characters long");
-  }
-
-  // Check for invalid patterns
-  if (trimmed.includes("..")) {
-    errors.push("Subdomain cannot contain consecutive dots");
-  }
-
-  if (trimmed.startsWith("-") || trimmed.endsWith("-")) {
-    errors.push("Subdomain cannot start or end with a hyphen");
-  }
-
-  // Check for reserved words
-  const reservedWords = ["www", "mail", "ftp", "localhost", "admin"];
-  if (reservedWords.includes(trimmed.toLowerCase())) {
-    errors.push("Subdomain cannot be a reserved word");
+  if (!trimmed) {
+    errors.push("AWS SSO subdomain is required");
+  } else if (trimmed.length < 2 || trimmed.length > 63) {
+    errors.push("Subdomain must be 2-63 characters long");
+  } else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$/.test(trimmed)) {
+    errors.push("Invalid subdomain format");
   }
 
   return { valid: errors.length === 0, errors };
@@ -246,24 +216,14 @@ function validateSubdomain(subdomain: string): ValidationResult {
  */
 function validateRoleName(roleName: string): ValidationResult {
   const errors: string[] = [];
-
-  if (!roleName || roleName.trim().length === 0) {
-    errors.push("Role name is required");
-    return { valid: false, errors };
-  }
-
   const trimmed = roleName.trim();
 
-  // Check for valid role name characters
-  if (!/^[a-zA-Z0-9+=,.@_-]+$/.test(trimmed)) {
-    errors.push(
-      "Role name can only contain letters, numbers, and the characters +=,.@_-"
-    );
-  }
-
-  // Check length
-  if (trimmed.length > 64) {
-    errors.push("Role name must be no more than 64 characters long");
+  if (!trimmed) {
+    errors.push("Role name is required");
+  } else if (trimmed.length > 64) {
+    errors.push("Role name too long (max 64 characters)");
+  } else if (!/^[a-zA-Z0-9+=,.@_-]+$/.test(trimmed)) {
+    errors.push("Invalid role name characters");
   }
 
   return { valid: errors.length === 0, errors };
@@ -280,7 +240,7 @@ function parseAccountRoleMap(mapText: string): {
   const errors: string[] = [];
   const map: AccountRoleMap = {};
 
-  if (!mapText || mapText.trim().length === 0) {
+  if (!mapText?.trim()) {
     return { valid: true, errors: [], map: {} };
   }
 
@@ -288,28 +248,23 @@ function parseAccountRoleMap(mapText: string): {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line.length === 0) continue; // Skip empty lines
+    if (!line) continue;
 
     const parts = line.split(":");
     if (parts.length !== 2) {
-      errors.push(`Line ${i + 1}: Invalid format. Use AccountID:RoleName`);
+      errors.push(`Line ${i + 1}: Use format AccountID:RoleName`);
       continue;
     }
 
     const accountId = parts[0].trim();
     const roleName = parts[1].trim();
 
-    // Validate account ID
-    if (!/^\d{6,12}$/.test(accountId)) {
-      errors.push(
-        `Line ${i + 1}: Invalid account ID format (must be 6-12 digits)`
-      );
+    if (!/^\d{12}$/.test(accountId)) {
+      errors.push(`Line ${i + 1}: Invalid account ID (must be 12 digits)`);
     }
 
-    // Validate role name
-    const roleValidation = validateRoleName(roleName);
-    if (!roleValidation.valid) {
-      errors.push(`Line ${i + 1}: ${roleValidation.errors[0]}`);
+    if (!roleName) {
+      errors.push(`Line ${i + 1}: Role name required`);
     }
 
     if (errors.length === 0) {

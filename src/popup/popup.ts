@@ -1,4 +1,5 @@
 import { SessionInfo, ExtensionConfig, UrlResult } from '../types/index.js';
+import { cleanUrl, generateDeepLink } from '../url-processor.js';
 
 class PopupManager {
     private currentSessionInfo: SessionInfo | null = null;
@@ -197,130 +198,57 @@ class PopupManager {
     }
 
     private async handleCleanUrl(): Promise<void> {
-        if (!this.currentSessionInfo) {
+        if (!this.currentSessionInfo?.currentUrl) {
             this.showError('Session information not available. Please refresh the page and try again.');
             return;
         }
 
         try {
-            // Validate session info before processing
-            if (!this.currentSessionInfo.currentUrl) {
-                this.showError('Current URL is not available for cleaning.');
-                return;
-            }
-
-            const result = this.cleanUrl(this.currentSessionInfo);
+            const result = cleanUrl(this.currentSessionInfo.currentUrl);
             
-            if (!result.success && result.error) {
-                // Provide specific guidance based on error type
-                if (result.error.includes('multi-account')) {
-                    this.showError('This URL is already in clean format or is not a multi-account URL.');
-                } else if (result.error.includes('AWS Console')) {
-                    this.showError('This page is not a valid AWS Console page.');
-                } else {
-                    this.showError(`URL cleaning failed: ${result.error}`);
-                }
+            if (!result.success) {
+                this.showError(`URL cleaning failed: ${result.error}`);
                 return;
             }
 
             await this.displayResult(result);
         } catch (error) {
             console.error('Failed to clean URL:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            this.showError(`Failed to clean URL: ${errorMessage}. Please try again.`);
+            this.showError('Failed to clean URL. Please try again.');
         }
     }
 
     private async handleGenerateDeepLink(): Promise<void> {
-        if (!this.currentSessionInfo) {
-            this.showError('Session information not available. Please refresh the page and try again.');
+        if (!this.currentSessionInfo || !this.config) {
+            this.showError('Session information or configuration not available. Please refresh the page and try again.');
             return;
         }
 
-        if (!this.config) {
-            this.showError('Extension configuration not loaded. Please try again.');
-            return;
-        }
-
-        if (!this.config.ssoSubdomain || this.config.ssoSubdomain.trim().length === 0) {
+        if (!this.config.ssoSubdomain?.trim()) {
             this.showError('AWS SSO subdomain not configured. Please go to Settings and enter your organization\'s SSO subdomain.');
             return;
         }
 
         try {
-            // Validate session info before processing
-            if (!this.currentSessionInfo.accountId || !this.currentSessionInfo.roleName) {
-                this.showError('Incomplete session information. Please ensure you are logged in with AWS SSO.');
-                return;
-            }
-
-            const result = this.generateDeepLink(this.currentSessionInfo, this.config);
+            // Resolve role name based on strategy
+            const roleName = this.resolveRoleName(this.currentSessionInfo, this.config);
+            const sessionWithResolvedRole = { ...this.currentSessionInfo, roleName };
             
-            if (!result.success && result.error) {
-                // Provide specific guidance based on error type
-                if (result.error.includes('subdomain')) {
-                    this.showError('Invalid AWS SSO subdomain configuration. Please check Settings and enter a valid subdomain.');
-                } else if (result.error.includes('account ID')) {
-                    this.showError('Invalid account ID detected. Please ensure you are on a valid AWS Console page.');
-                } else if (result.error.includes('role name')) {
-                    this.showError('Invalid role name detected. This extension requires AWS SSO authentication.');
-                } else {
-                    this.showError(`Deep link generation failed: ${result.error}`);
-                }
+            const result = generateDeepLink(sessionWithResolvedRole, this.config);
+            
+            if (!result.success) {
+                this.showError(`Deep link generation failed: ${result.error}`);
                 return;
             }
 
             await this.displayResult(result);
         } catch (error) {
             console.error('Failed to generate deep link:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            this.showError(`Failed to generate deep link: ${errorMessage}. Please try again.`);
+            this.showError('Failed to generate deep link. Please try again.');
         }
     }
 
-    private cleanUrl(sessionInfo: SessionInfo): UrlResult {
-        try {
-            const url = new URL(sessionInfo.currentUrl);
-            
-            if (!sessionInfo.isMultiAccount) {
-                return {
-                    success: true,
-                    url: sessionInfo.currentUrl,
-                    type: 'clean'
-                };
-            }
 
-            // Remove account ID and random prefix from hostname
-            // Format: 123456-acb456xyz.eu-west-1.console.aws.amazon.com
-            const hostname = url.hostname;
-            const parts = hostname.split('.');
-            
-            if (parts.length >= 4 && parts[0].includes('-')) {
-                // Remove the account prefix part
-                const cleanHostname = parts.slice(1).join('.');
-                url.hostname = cleanHostname;
-                
-                return {
-                    success: true,
-                    url: url.toString(),
-                    type: 'clean'
-                };
-            }
-
-            return {
-                success: true,
-                url: sessionInfo.currentUrl,
-                type: 'clean'
-            };
-
-        } catch (error) {
-            return {
-                success: false,
-                error: 'Failed to parse URL',
-                type: 'clean'
-            };
-        }
-    }
 
     private resolveRoleName(sessionInfo: SessionInfo, config: ExtensionConfig): string {
         const strategy = config.roleSelectionStrategy || 'current';
@@ -346,53 +274,7 @@ class PopupManager {
         }
     }
 
-    private generateDeepLink(sessionInfo: SessionInfo, config: ExtensionConfig): UrlResult {
-        try {
-            if (!sessionInfo.accountId || !sessionInfo.roleName) {
-                return {
-                    success: false,
-                    error: 'Missing account ID or role name from session',
-                    type: 'deeplink'
-                };
-            }
 
-            const cleanedUrl = this.cleanUrl(sessionInfo);
-            if (!cleanedUrl.success || !cleanedUrl.url) {
-                return {
-                    success: false,
-                    error: 'Failed to clean destination URL',
-                    type: 'deeplink'
-                };
-            }
-
-            // Resolve the role name based on strategy
-            const roleName = this.resolveRoleName(sessionInfo, config);
-            
-            if (!roleName || roleName.trim().length === 0) {
-                return {
-                    success: false,
-                    error: 'No role name available. Please check your role selection strategy configuration.',
-                    type: 'deeplink'
-                };
-            }
-
-            const deepLinkUrl = new URL(`https://${config.ssoSubdomain}.awsapps.com/start/`);
-            deepLinkUrl.hash = `/console?account_id=${sessionInfo.accountId}&role_name=${roleName}&destination=${encodeURIComponent(cleanedUrl.url)}`;
-
-            return {
-                success: true,
-                url: deepLinkUrl.toString(),
-                type: 'deeplink'
-            };
-
-        } catch (error) {
-            return {
-                success: false,
-                error: 'Failed to generate deep link URL',
-                type: 'deeplink'
-            };
-        }
-    }
 
     private async displayResult(result: UrlResult): Promise<void> {
         const resultSection = document.getElementById('result-section');
@@ -446,26 +328,14 @@ class PopupManager {
 
     async copyToClipboard(text: string): Promise<boolean> {
         try {
-            // Use modern Clipboard API if available
             if (navigator.clipboard && window.isSecureContext) {
                 await navigator.clipboard.writeText(text);
                 return true;
             }
             
-            // Fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            
-            const success = document.execCommand('copy');
-            document.body.removeChild(textArea);
-            
-            return success;
+            // Simple fallback - just show the text for manual copying
+            console.warn('Clipboard API not available');
+            return false;
         } catch (error) {
             console.error('Failed to copy to clipboard:', error);
             return false;
