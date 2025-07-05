@@ -9,7 +9,7 @@ import { cleanUrl, generateDeepLink, validateAwsConsoleUrl } from './url-process
 /**
  * Handle messages from popup and route them to content scripts
  */
-async function handleMessage(
+export async function handleMessage(
   message: PopupMessage | any,
   sender: chrome.runtime.MessageSender
 ): Promise<ContentResponse | ExtensionError | UrlResult> {
@@ -76,7 +76,7 @@ async function handleMessage(
 /**
  * Validate that a tab is an AWS Console page
  */
-async function validateAwsConsoleTab(tabId: number): Promise<boolean> {
+export async function validateAwsConsoleTab(tabId: number): Promise<boolean> {
   try {
     const tab = await chrome.tabs.get(tabId);
     return tab?.url ? validateAwsConsoleUrl(tab.url) : false;
@@ -89,7 +89,7 @@ async function validateAwsConsoleTab(tabId: number): Promise<boolean> {
 /**
  * Initialize extension on install/startup
  */
-function initializeExtension(): void {
+export function initializeExtension(): void {
   console.log('AWS Console Link Sharer extension initialized');
   
   // Set up message listener

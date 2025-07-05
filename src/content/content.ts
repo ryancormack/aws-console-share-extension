@@ -20,7 +20,7 @@ interface ContentResponse {
 /**
  * Extract AWS Account ID from the console DOM
  */
-function extractAccountId(): string | null {
+export function extractAccountId(): string | null {
   try {
     // Primary strategy: Look for account ID copy button
     const copyButton = document.querySelector('[data-testid="awsc-copy-accountid"]');
@@ -52,7 +52,7 @@ function extractAccountId(): string | null {
 /**
  * Extract role name from federated user string
  */
-function extractRoleName(): string | null {
+export function extractRoleName(): string | null {
   try {
     // Strategy 1: Look for role/email pattern in data-testid or text
     const elements = document.querySelectorAll('[data-testid*="/"], span');
@@ -90,14 +90,14 @@ function extractRoleName(): string | null {
 /**
  * Get the current page URL
  */
-function getCurrentUrl(): string {
+export function getCurrentUrl(): string {
   return window.location.href;
 }
 
 /**
  * Check if the current URL is a multi-account URL format
  */
-function isMultiAccountUrl(url: string): boolean {
+export function isMultiAccountUrl(url: string): boolean {
   try {
     return /^\d{12}-[a-z0-9]+\./.test(new URL(url).hostname);
   } catch {
@@ -108,7 +108,7 @@ function isMultiAccountUrl(url: string): boolean {
 /**
  * Extract AWS region from the current URL
  */
-function extractRegion(): string {
+export function extractRegion(): string {
   try {
     const url = getCurrentUrl();
     const match = new URL(url).hostname.match(/([a-z]{2}-[a-z]+-\d+)\.console\.aws\.amazon\.com/);
@@ -121,7 +121,7 @@ function extractRegion(): string {
 /**
  * Validate extracted session information
  */
-function validateSessionData(
+export function validateSessionData(
   accountId: string | null,
   roleName: string | null,
   currentUrl: string
@@ -146,7 +146,7 @@ function validateSessionData(
 /**
  * Aggregate all session information from the AWS Console page
  */
-async function getSessionInfo(): Promise<SessionInfo> {
+export async function getSessionInfo(): Promise<SessionInfo> {
   const currentUrl = getCurrentUrl();
 
   if (!currentUrl.includes("console.aws.amazon.com")) {
