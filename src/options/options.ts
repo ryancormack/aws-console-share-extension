@@ -8,7 +8,7 @@ import {
 /**
  * Default configuration values
  */
-const DEFAULT_CONFIG: ExtensionConfig = {
+export const DEFAULT_CONFIG: ExtensionConfig = {
   ssoSubdomain: "",
   defaultAction: "clean",
   showNotifications: true,
@@ -45,14 +45,14 @@ let elements: OptionsElements;
 /**
  * Handle role selection strategy change
  */
-function handleRoleStrategyChange(): void {
+export function handleRoleStrategyChange(): void {
   updateRoleStrategyVisibility();
 }
 
 /**
  * Update visibility of role strategy dependent fields
  */
-function updateRoleStrategyVisibility(): void {
+export function updateRoleStrategyVisibility(): void {
   const strategy = elements.roleSelectionStrategy
     .value as RoleSelectionStrategy;
 
@@ -74,7 +74,7 @@ function updateRoleStrategyVisibility(): void {
 /**
  * Initialize the options page
  */
-async function initializeOptions(): Promise<void> {
+export async function initializeOptions(): Promise<void> {
   try {
     // Get DOM elements
     elements = {
@@ -147,7 +147,7 @@ async function initializeOptions(): Promise<void> {
 /**
  * Load settings from Chrome storage and populate form
  */
-async function loadSettings(): Promise<ExtensionConfig> {
+export async function loadSettings(): Promise<ExtensionConfig> {
   try {
     const result = await chrome.storage.sync.get(DEFAULT_CONFIG);
     const config = result as ExtensionConfig;
@@ -181,7 +181,7 @@ async function loadSettings(): Promise<ExtensionConfig> {
 /**
  * Save settings to Chrome storage
  */
-async function saveSettings(config: ExtensionConfig): Promise<void> {
+export async function saveSettings(config: ExtensionConfig): Promise<void> {
   try {
     await chrome.storage.sync.set(config);
     showStatus("Settings saved successfully", "success");
@@ -196,7 +196,7 @@ async function saveSettings(config: ExtensionConfig): Promise<void> {
 /**
  * Validate AWS SSO subdomain format
  */
-function validateSubdomain(subdomain: string): ValidationResult {
+export function validateSubdomain(subdomain: string): ValidationResult {
   const errors: string[] = [];
   const trimmed = subdomain.trim();
 
@@ -214,7 +214,7 @@ function validateSubdomain(subdomain: string): ValidationResult {
 /**
  * Validate role name format
  */
-function validateRoleName(roleName: string): ValidationResult {
+export function validateRoleName(roleName: string): ValidationResult {
   const errors: string[] = [];
   const trimmed = roleName.trim();
 
@@ -232,7 +232,7 @@ function validateRoleName(roleName: string): ValidationResult {
 /**
  * Parse and validate account role mapping
  */
-function parseAccountRoleMap(mapText: string): {
+export function parseAccountRoleMap(mapText: string): {
   valid: boolean;
   errors: string[];
   map: AccountRoleMap;
@@ -278,7 +278,7 @@ function parseAccountRoleMap(mapText: string): {
 /**
  * Reset configuration to defaults
  */
-async function resetToDefaults(): Promise<void> {
+export async function resetToDefaults(): Promise<void> {
   try {
     await chrome.storage.sync.clear();
     await loadSettings();
@@ -293,7 +293,7 @@ async function resetToDefaults(): Promise<void> {
 /**
  * Handle form submission
  */
-async function handleFormSubmit(event: Event): Promise<void> {
+export async function handleFormSubmit(event: Event): Promise<void> {
   event.preventDefault();
 
   try {
@@ -367,7 +367,7 @@ async function handleFormSubmit(event: Event): Promise<void> {
 /**
  * Handle reset button click
  */
-async function handleReset(event: Event): Promise<void> {
+export async function handleReset(event: Event): Promise<void> {
   event.preventDefault();
 
   if (
@@ -382,14 +382,14 @@ async function handleReset(event: Event): Promise<void> {
 /**
  * Handle subdomain input changes
  */
-function handleSubdomainInput(): void {
+export function handleSubdomainInput(): void {
   clearFieldError("ssoSubdomain");
 }
 
 /**
  * Validate subdomain field on blur
  */
-function validateSubdomainField(): void {
+export function validateSubdomainField(): void {
   const subdomain = elements.ssoSubdomain.value.trim();
   if (subdomain) {
     const validation = validateSubdomain(subdomain);
@@ -402,7 +402,7 @@ function validateSubdomainField(): void {
 /**
  * Show status message
  */
-function showStatus(message: string, type: "success" | "error"): void {
+export function showStatus(message: string, type: "success" | "error"): void {
   elements.statusMessage.textContent = message;
   elements.statusMessage.className = `status-message ${type}`;
   elements.statusMessage.style.display = "block";
@@ -417,7 +417,7 @@ function showStatus(message: string, type: "success" | "error"): void {
 /**
  * Show field error
  */
-function showFieldError(fieldName: string, message: string): void {
+export function showFieldError(fieldName: string, message: string): void {
   const errorElement = document.getElementById(`${fieldName}Error`);
   const inputElement = document.getElementById(fieldName);
 
@@ -432,7 +432,7 @@ function showFieldError(fieldName: string, message: string): void {
 /**
  * Clear field error
  */
-function clearFieldError(fieldName: string): void {
+export function clearFieldError(fieldName: string): void {
   const errorElement = document.getElementById(`${fieldName}Error`);
   const inputElement = document.getElementById(fieldName);
 
@@ -447,7 +447,7 @@ function clearFieldError(fieldName: string): void {
 /**
  * Clear all field errors
  */
-function clearFieldErrors(): void {
+export function clearFieldErrors(): void {
   clearFieldError("ssoSubdomain");
   clearFieldError("defaultRoleName");
   clearFieldError("accountRoleMap");
