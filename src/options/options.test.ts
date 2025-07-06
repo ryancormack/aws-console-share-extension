@@ -13,14 +13,7 @@ const mockChrome = {
 
 // Mock global functions
 const mockConfirm = vi.fn();
-const mockSetTimeout = vi.fn((fn) => {
-  if (typeof fn === "function") {
-    fn();
-  }
-  return 1;
-});
-const mockConsoleLog = vi.fn();
-const mockConsoleError = vi.fn();
+const mockSetTimeout = vi.fn();
 
 describe("Options Page", () => {
   let validateSubdomain: any;
@@ -33,8 +26,6 @@ describe("Options Page", () => {
   let updateRoleStrategyVisibility: any;
   let loadSettings: any;
   let saveSettings: any;
-  let resetToDefaults: any;
-  let handleFormSubmit: any;
   let handleReset: any;
   let handleSubdomainInput: any;
   let validateSubdomainField: any;
@@ -83,10 +74,6 @@ describe("Options Page", () => {
     (global as any).chrome = mockChrome;
     (global as any).confirm = mockConfirm;
     (global as any).setTimeout = mockSetTimeout;
-    (global as any).console = {
-      log: mockConsoleLog,
-      error: mockConsoleError,
-    };
 
     // Mock document ready state
     Object.defineProperty(document, "readyState", {
@@ -122,8 +109,6 @@ describe("Options Page", () => {
     updateRoleStrategyVisibility = optionsModule.updateRoleStrategyVisibility;
     loadSettings = optionsModule.loadSettings;
     saveSettings = optionsModule.saveSettings;
-    resetToDefaults = optionsModule.resetToDefaults;
-    handleFormSubmit = optionsModule.handleFormSubmit;
     handleReset = optionsModule.handleReset;
     handleSubdomainInput = optionsModule.handleSubdomainInput;
     validateSubdomainField = optionsModule.validateSubdomainField;
@@ -243,32 +228,31 @@ describe("Options Page", () => {
   });
 
   describe("UI Visibility Logic", () => {
-    it("should test visibility logic patterns", () => {
-      // Test the visibility logic patterns used in the implementation
-      const testVisibilityLogic = (strategy: string) => {
-        const shouldShowDefaultRole = strategy === "default" || strategy === "account-map";
-        const shouldShowAccountMap = strategy === "account-map";
-        
-        return {
-          defaultRoleVisible: shouldShowDefaultRole,
-          accountMapVisible: shouldShowAccountMap
-        };
-      };
+    it("should update role strategy visibility correctly", async () => {
+      // Initialize the options page to set up element references
+      await initializeOptions();
+      
+      const roleStrategySelect = document.getElementById("roleSelectionStrategy") as HTMLSelectElement;
+      const defaultRoleGroup = document.getElementById("defaultRoleGroup") as HTMLElement;
+      const accountRoleMapGroup = document.getElementById("accountRoleMapGroup") as HTMLElement;
 
       // Test current strategy
-      const currentResult = testVisibilityLogic("current");
-      expect(currentResult.defaultRoleVisible).toBe(false);
-      expect(currentResult.accountMapVisible).toBe(false);
+      roleStrategySelect.value = "current";
+      updateRoleStrategyVisibility();
+      expect(defaultRoleGroup.style.display).toBe("none");
+      expect(accountRoleMapGroup.style.display).toBe("none");
 
       // Test default strategy
-      const defaultResult = testVisibilityLogic("default");
-      expect(defaultResult.defaultRoleVisible).toBe(true);
-      expect(defaultResult.accountMapVisible).toBe(false);
+      roleStrategySelect.value = "default";
+      updateRoleStrategyVisibility();
+      expect(defaultRoleGroup.style.display).toBe("block");
+      expect(accountRoleMapGroup.style.display).toBe("none");
 
       // Test account-map strategy
-      const accountMapResult = testVisibilityLogic("account-map");
-      expect(accountMapResult.defaultRoleVisible).toBe(true);
-      expect(accountMapResult.accountMapVisible).toBe(true);
+      roleStrategySelect.value = "account-map";
+      updateRoleStrategyVisibility();
+      expect(defaultRoleGroup.style.display).toBe("block");
+      expect(accountRoleMapGroup.style.display).toBe("block");
     });
   });
 
@@ -308,27 +292,26 @@ describe("Options Page", () => {
       expect(inputElement.getAttribute("aria-invalid")).toBeNull();
     });
 
-    it("should test status message patterns", () => {
-      // Test the status message patterns used in the implementation
-      const testStatusMessage = (message: string, type: "success" | "error") => {
-        return {
-          message,
-          className: `status-message ${type}`,
-          display: "block"
-        };
-      };
+    it("should show status messages correctly", async () => {
+      // Initialize the options page to set up element references
+      await initializeOptions();
+      
+      const statusElement = document.getElementById("statusMessage") as HTMLElement;
 
       // Test success message
-      const successResult = testStatusMessage("Settings saved successfully", "success");
-      expect(successResult.message).toBe("Settings saved successfully");
-      expect(successResult.className).toBe("status-message success");
-      expect(successResult.display).toBe("block");
+      showStatus("Test success message", "success");
+      expect(statusElement.textContent).toBe("Test success message");
+      expect(statusElement.className).toBe("status-message success");
+      expect(statusElement.style.display).toBe("block");
+      
+      // Verify setTimeout was called for success message auto-hide
+      expect(mockSetTimeout).toHaveBeenCalledWith(expect.any(Function), 3000);
 
       // Test error message
-      const errorResult = testStatusMessage("Failed to save settings", "error");
-      expect(errorResult.message).toBe("Failed to save settings");
-      expect(errorResult.className).toBe("status-message error");
-      expect(errorResult.display).toBe("block");
+      showStatus("Test error message", "error");
+      expect(statusElement.textContent).toBe("Test error message");
+      expect(statusElement.className).toBe("status-message error");
+      expect(statusElement.style.display).toBe("block");
     });
 
     it("should clear all field errors", () => {
@@ -378,15 +361,19 @@ describe("Options Page", () => {
     });
 
     it("should handle load settings error", async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockChrome.storage.sync.get.mockRejectedValue(new Error("Storage error"));
 
       const result = await loadSettings();
 
       expect(result).toEqual(DEFAULT_CONFIG);
-      expect(mockConsoleError).toHaveBeenCalledWith("Failed to load settings:", expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith("Failed to load settings:", expect.any(Error));
+      
+      consoleSpy.mockRestore();
     });
 
     it("should save settings to Chrome storage", async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const config = {
         ssoSubdomain: "my-company",
         defaultAction: "clean" as const,
@@ -400,10 +387,13 @@ describe("Options Page", () => {
       await saveSettings(config);
 
       expect(mockChrome.storage.sync.set).toHaveBeenCalledWith(config);
-      expect(mockConsoleLog).toHaveBeenCalledWith("Settings saved:", config);
+      expect(consoleSpy).toHaveBeenCalledWith("Settings saved:", config);
+      
+      consoleSpy.mockRestore();
     });
 
     it("should handle save settings error", async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const config = {
         ssoSubdomain: "test",
         defaultAction: "clean" as const,
@@ -417,7 +407,9 @@ describe("Options Page", () => {
       mockChrome.storage.sync.set.mockRejectedValue(new Error("Storage error"));
 
       await expect(saveSettings(config)).rejects.toThrow("Storage error");
-      expect(mockConsoleError).toHaveBeenCalledWith("Failed to save settings:", expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith("Failed to save settings:", expect.any(Error));
+      
+      consoleSpy.mockRestore();
     });
 
     it("should convert account role map to textarea format", () => {
@@ -433,127 +425,6 @@ describe("Options Page", () => {
 
       expect(accountRoleMapText).toBe(
         "123456789012:PowerUser\n987654321098:ReadOnly\n555666777888:DeveloperAccess"
-      );
-    });
-
-    it("should handle form data extraction", () => {
-      // Simulate form data extraction
-      const extractFormData = () => {
-        const ssoInput = document.getElementById(
-          "ssoSubdomain"
-        ) as HTMLInputElement;
-        const defaultActionSelect = document.getElementById(
-          "defaultAction"
-        ) as HTMLSelectElement;
-        const showNotificationsCheckbox = document.getElementById(
-          "showNotifications"
-        ) as HTMLInputElement;
-        const autoCloseCheckbox = document.getElementById(
-          "autoClosePopup"
-        ) as HTMLInputElement;
-        const roleStrategySelect = document.getElementById(
-          "roleSelectionStrategy"
-        ) as HTMLSelectElement;
-        const defaultRoleInput = document.getElementById(
-          "defaultRoleName"
-        ) as HTMLInputElement;
-        const accountRoleMapTextarea = document.getElementById(
-          "accountRoleMap"
-        ) as HTMLTextAreaElement;
-
-        return {
-          ssoSubdomain: (ssoInput.value || "").trim(),
-          defaultAction: defaultActionSelect.value as "clean" | "deeplink",
-          showNotifications: showNotificationsCheckbox.checked,
-          autoClosePopup: autoCloseCheckbox.checked,
-          roleSelectionStrategy: roleStrategySelect.value,
-          defaultRoleName: (defaultRoleInput.value || "").trim(),
-          accountRoleMapText: (accountRoleMapTextarea.value || "").trim(),
-        };
-      };
-
-      // Set form values
-      (document.getElementById("ssoSubdomain") as HTMLInputElement).value =
-        "test-company";
-      (document.getElementById("defaultAction") as HTMLSelectElement).value =
-        "deeplink";
-      (
-        document.getElementById("showNotifications") as HTMLInputElement
-      ).checked = false;
-      (document.getElementById("autoClosePopup") as HTMLInputElement).checked =
-        true;
-      (
-        document.getElementById("roleSelectionStrategy") as HTMLSelectElement
-      ).value = "account-map";
-      (document.getElementById("defaultRoleName") as HTMLInputElement).value =
-        "TestRole";
-      (document.getElementById("accountRoleMap") as HTMLTextAreaElement).value =
-        "123456789012:PowerUser";
-
-      const formData = extractFormData();
-
-      expect(formData.ssoSubdomain).toBe("test-company");
-      expect(formData.defaultAction).toBe("deeplink");
-      expect(formData.showNotifications).toBe(false);
-      expect(formData.autoClosePopup).toBe(true);
-      expect(formData.roleSelectionStrategy).toBe("account-map");
-      expect(formData.defaultRoleName).toBe("TestRole");
-      expect(formData.accountRoleMapText).toBe("123456789012:PowerUser");
-    });
-  });
-
-  describe("Chrome Storage Operations", () => {
-    it("should handle storage get operations", async () => {
-      const mockConfig = {
-        ssoSubdomain: "test-company",
-        defaultAction: "clean",
-        showNotifications: true,
-      };
-
-      mockChrome.storage.sync.get.mockResolvedValue(mockConfig);
-
-      const result = await chrome.storage.sync.get([
-        "ssoSubdomain",
-        "defaultAction",
-      ]);
-
-      expect(mockChrome.storage.sync.get).toHaveBeenCalled();
-      expect(result).toEqual(mockConfig);
-    });
-
-    it("should handle storage set operations", async () => {
-      const config = {
-        ssoSubdomain: "my-company",
-        defaultAction: "deeplink",
-        showNotifications: false,
-        autoClosePopup: true,
-        roleSelectionStrategy: "current",
-        defaultRoleName: "",
-        accountRoleMap: {},
-      };
-
-      mockChrome.storage.sync.set.mockResolvedValue(undefined);
-
-      await chrome.storage.sync.set(config);
-
-      expect(mockChrome.storage.sync.set).toHaveBeenCalledWith(config);
-    });
-
-    it("should handle storage clear operations", async () => {
-      mockChrome.storage.sync.clear.mockResolvedValue(undefined);
-
-      await chrome.storage.sync.clear();
-
-      expect(mockChrome.storage.sync.clear).toHaveBeenCalled();
-    });
-
-    it("should handle storage errors", async () => {
-      mockChrome.storage.sync.get.mockRejectedValue(
-        new Error("Storage unavailable")
-      );
-
-      await expect(chrome.storage.sync.get({})).rejects.toThrow(
-        "Storage unavailable"
       );
     });
   });
@@ -818,184 +689,59 @@ describe("Options Page", () => {
     });
   });
 
-  describe("Implementation Coverage Tests", () => {
-    it("should load settings and return configuration", async () => {
-      // Mock successful storage load
-      mockChrome.storage.sync.get.mockResolvedValue({
-        ssoSubdomain: "test-company",
-        defaultAction: "deeplink",
-        showNotifications: false,
-        autoClosePopup: true,
-        roleSelectionStrategy: "default",
-        defaultRoleName: "TestRole",
-        accountRoleMap: { "123456789012": "PowerUser" },
-      });
-
-      // Call loadSettings directly
-      const config = await loadSettings();
-
-      // Verify storage was called
-      expect(mockChrome.storage.sync.get).toHaveBeenCalledWith(DEFAULT_CONFIG);
-
-      // Verify the returned config
-      expect(config.ssoSubdomain).toBe("test-company");
-      expect(config.defaultAction).toBe("deeplink");
-      expect(config.showNotifications).toBe(false);
-      expect(config.autoClosePopup).toBe(true);
-      expect(config.roleSelectionStrategy).toBe("default");
-      expect(config.defaultRoleName).toBe("TestRole");
-      expect(config.accountRoleMap).toEqual({ "123456789012": "PowerUser" });
+  describe("Event Handler Logic", () => {
+    it("should handle subdomain input events", () => {
+      // Set up an error first
+      showFieldError("ssoSubdomain", "Test error");
+      
+      // Simulate input event
+      handleSubdomainInput();
+      
+      // Error should be cleared
+      const errorElement = document.getElementById("ssoSubdomainError");
+      expect(errorElement?.textContent).toBe("");
+      expect(errorElement?.style.display).toBe("none");
     });
 
-    it("should test error handling patterns", () => {
-      // Test error handling patterns used in the implementation
-      const handleStorageError = (error: Error) => {
-        console.error("Failed to load settings:", error);
-        return { success: false, error: error.message };
-      };
-
-      const result = handleStorageError(new Error("Storage unavailable"));
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Storage unavailable");
+    it("should handle subdomain field validation", async () => {
+      // Initialize the options page to set up element references
+      await initializeOptions();
+      
+      const subdomainInput = document.getElementById("ssoSubdomain") as HTMLInputElement;
+      
+      // Test valid subdomain
+      subdomainInput.value = "valid-subdomain";
+      validateSubdomainField();
+      
+      const errorElement = document.getElementById("ssoSubdomainError");
+      expect(errorElement?.textContent).toBe("");
+      
+      // Test invalid subdomain
+      subdomainInput.value = "-invalid-";
+      validateSubdomainField();
+      
+      expect(errorElement?.textContent).toBe("Invalid subdomain format");
     });
 
-    it("should test form validation patterns", () => {
-      // Test form validation patterns used in the implementation
-      const validateFormData = (data: any) => {
-        const errors: string[] = [];
-
-        if (!data.ssoSubdomain?.trim()) {
-          errors.push("AWS SSO subdomain is required");
-        }
-
-        if (
-          data.roleSelectionStrategy === "default" &&
-          data.defaultRoleName &&
-          data.defaultRoleName.length > 64
-        ) {
-          errors.push("Role name too long (max 64 characters)");
-        }
-
-        return { valid: errors.length === 0, errors };
-      };
-
-      const validData = {
-        ssoSubdomain: "test-company",
-        roleSelectionStrategy: "current",
-      };
-      const invalidData = {
-        ssoSubdomain: "",
-        roleSelectionStrategy: "default",
-        defaultRoleName: "a".repeat(65),
-      };
-
-      expect(validateFormData(validData).valid).toBe(true);
-      expect(validateFormData(invalidData).valid).toBe(false);
-      expect(validateFormData(invalidData).errors).toContain(
-        "AWS SSO subdomain is required"
-      );
-      expect(validateFormData(invalidData).errors).toContain(
-        "Role name too long (max 64 characters)"
+    it("should handle reset confirmation", async () => {
+      mockConfirm.mockReturnValue(true);
+      
+      const event = new Event('click');
+      await handleReset(event);
+      
+      expect(mockConfirm).toHaveBeenCalledWith(
+        "Are you sure you want to reset all settings to their default values?"
       );
     });
 
-    it("should test configuration building patterns", () => {
-      // Test configuration building patterns used in the implementation
-      const buildConfig = (formData: any) => {
-        return {
-          ssoSubdomain: formData.ssoSubdomain?.trim() || "",
-          defaultAction: formData.defaultAction || "clean",
-          showNotifications: formData.showNotifications !== false,
-          autoClosePopup: formData.autoClosePopup === true,
-          roleSelectionStrategy: formData.roleSelectionStrategy || "current",
-          defaultRoleName: formData.defaultRoleName?.trim() || "",
-          accountRoleMap: formData.accountRoleMap || {},
-        };
-      };
-
-      const formData = {
-        ssoSubdomain: "  test-company  ",
-        defaultAction: "deeplink",
-        showNotifications: false,
-        autoClosePopup: true,
-        roleSelectionStrategy: "account-map",
-        defaultRoleName: "  TestRole  ",
-        accountRoleMap: { "123456789012": "PowerUser" },
-      };
-
-      const config = buildConfig(formData);
-      expect(config.ssoSubdomain).toBe("test-company");
-      expect(config.defaultAction).toBe("deeplink");
-      expect(config.showNotifications).toBe(false);
-      expect(config.autoClosePopup).toBe(true);
-      expect(config.roleSelectionStrategy).toBe("account-map");
-      expect(config.defaultRoleName).toBe("TestRole");
-      expect(config.accountRoleMap).toEqual({ "123456789012": "PowerUser" });
-    });
-
-    it("should handle role strategy changes", async () => {
-      mockChrome.storage.sync.get.mockResolvedValue({});
-
-      // Import the options module
-      await import("./options.js");
-
-      const roleStrategySelect = document.getElementById(
-        "roleSelectionStrategy"
-      ) as HTMLSelectElement;
-
-      // Test changing to default strategy
-      roleStrategySelect.value = "default";
-      const changeEvent = new Event("change", { bubbles: true });
-      roleStrategySelect.dispatchEvent(changeEvent);
-
-      // The event should be handled
-      expect(roleStrategySelect.value).toBe("default");
-    });
-
-    it("should handle input events for clearing errors", async () => {
-      mockChrome.storage.sync.get.mockResolvedValue({});
-
-      // Import the options module
-      await import("./options.js");
-
-      const ssoInput = document.getElementById(
-        "ssoSubdomain"
-      ) as HTMLInputElement;
-      const defaultRoleInput = document.getElementById(
-        "defaultRoleName"
-      ) as HTMLInputElement;
-      const accountRoleMapTextarea = document.getElementById(
-        "accountRoleMap"
-      ) as HTMLTextAreaElement;
-
-      // Create and dispatch input events
-      const inputEvent = new Event("input", { bubbles: true });
-
-      ssoInput.dispatchEvent(inputEvent);
-      defaultRoleInput.dispatchEvent(inputEvent);
-      accountRoleMapTextarea.dispatchEvent(inputEvent);
-
-      // Events should be handled without errors
-      expect(true).toBe(true); // If we get here, events were handled successfully
-    });
-
-    it("should handle blur events for validation", async () => {
-      mockChrome.storage.sync.get.mockResolvedValue({});
-
-      // Import the options module
-      await import("./options.js");
-
-      const ssoInput = document.getElementById(
-        "ssoSubdomain"
-      ) as HTMLInputElement;
-
-      // Set invalid value and trigger blur
-      ssoInput.value = "-invalid";
-      const blurEvent = new Event("blur", { bubbles: true });
-      ssoInput.dispatchEvent(blurEvent);
-
-      // Blur event should be handled
-      expect(ssoInput.value).toBe("-invalid");
+    it("should handle reset cancellation", async () => {
+      mockConfirm.mockReturnValue(false);
+      
+      const event = new Event('click');
+      await handleReset(event);
+      
+      expect(mockConfirm).toHaveBeenCalled();
+      // Should not proceed with reset when cancelled
     });
   });
 });

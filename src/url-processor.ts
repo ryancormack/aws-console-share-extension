@@ -1,13 +1,4 @@
-/**
- * URL processing logic for AWS Console Link Sharer extension
- * Handles URL cleaning and deep link generation
- */
-
 import { SessionInfo, ExtensionConfig, UrlResult } from './types/index.js';
-
-/**
- * Clean URL by removing account ID and random character prefix
- */
 export function cleanUrl(url: string): UrlResult {
   try {
     if (!url || typeof url !== 'string' || url.trim().length === 0) {
@@ -20,7 +11,6 @@ export function cleanUrl(url: string): UrlResult {
       return { success: false, error: "Not an AWS Console URL", type: "clean" };
     }
 
-    // Check for multi-account format: 123456789012-abc123.region.console.aws.amazon.com
     const match = parsedUrl.hostname.match(/^(\d{12})-[a-z0-9]+\.(.+)$/);
     if (match) {
       parsedUrl.hostname = match[2];
@@ -32,9 +22,6 @@ export function cleanUrl(url: string): UrlResult {
   }
 }
 
-/**
- * Check if URL has multi-account format
- */
 export function isMultiAccountUrl(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
@@ -43,10 +30,6 @@ export function isMultiAccountUrl(url: string): boolean {
     return false;
   }
 }
-
-/**
- * Generate AWS SSO deep link
- */
 export function generateDeepLink(sessionInfo: SessionInfo, config: ExtensionConfig): UrlResult {
   try {
     if (!config?.ssoSubdomain?.trim()) {
@@ -57,7 +40,6 @@ export function generateDeepLink(sessionInfo: SessionInfo, config: ExtensionConf
       return { success: false, error: "Missing session information", type: "deeplink" };
     }
 
-    // Clean the destination URL first
     const cleanedUrlResult = cleanUrl(sessionInfo.currentUrl);
     if (!cleanedUrlResult.success) {
       return { success: false, error: "Failed to clean destination URL", type: "deeplink" };
@@ -77,9 +59,6 @@ export function generateDeepLink(sessionInfo: SessionInfo, config: ExtensionConf
   }
 }
 
-/**
- * Validate AWS Console URL format
- */
 export function validateAwsConsoleUrl(url: string): boolean {
   try {
     if (!url) return false;
@@ -89,10 +68,6 @@ export function validateAwsConsoleUrl(url: string): boolean {
     return false;
   }
 }
-
-/**
- * Validate session information
- */
 export function validateSessionInfo(sessionInfo: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -116,9 +91,6 @@ export function validateSessionInfo(sessionInfo: any): { valid: boolean; errors:
   return { valid: errors.length === 0, errors };
 }
 
-/**
- * Validate extension configuration
- */
 export function validateExtensionConfig(config: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -133,10 +105,6 @@ export function validateExtensionConfig(config: any): { valid: boolean; errors: 
 
   return { valid: errors.length === 0, errors };
 }
-
-/**
- * Extract region from AWS Console URL
- */
 export function extractRegionFromUrl(url: string): string | null {
   try {
     if (!url) return null;
@@ -146,7 +114,6 @@ export function extractRegionFromUrl(url: string): string | null {
     
     if (match) return match[1];
     
-    // Check URL parameters as fallback
     const regionParam = new URLSearchParams(parsedUrl.search).get('region');
     return regionParam && /^[a-z]{2}-[a-z]+-\d+$/.test(regionParam) ? regionParam : null;
   } catch {

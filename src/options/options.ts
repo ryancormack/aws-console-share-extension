@@ -5,9 +5,6 @@ import {
   AccountRoleMap,
 } from "../types/index.js";
 
-/**
- * Default configuration values
- */
 export const DEFAULT_CONFIG: ExtensionConfig = {
   ssoSubdomain: "",
   defaultAction: "clean",
@@ -17,10 +14,6 @@ export const DEFAULT_CONFIG: ExtensionConfig = {
   defaultRoleName: "",
   accountRoleMap: {},
 };
-
-/**
- * DOM element references
- */
 interface OptionsElements {
   form: HTMLFormElement;
   ssoSubdomain: HTMLInputElement;
@@ -42,28 +35,18 @@ interface OptionsElements {
 
 let elements: OptionsElements;
 
-/**
- * Handle role selection strategy change
- */
 export function handleRoleStrategyChange(): void {
   updateRoleStrategyVisibility();
 }
-
-/**
- * Update visibility of role strategy dependent fields
- */
 export function updateRoleStrategyVisibility(): void {
-  const strategy = elements.roleSelectionStrategy
-    .value as RoleSelectionStrategy;
+  const strategy = elements.roleSelectionStrategy.value as RoleSelectionStrategy;
 
-  // Show/hide default role field
   if (strategy === "default" || strategy === "account-map") {
     elements.defaultRoleGroup.style.display = "block";
   } else {
     elements.defaultRoleGroup.style.display = "none";
   }
 
-  // Show/hide account role mapping field
   if (strategy === "account-map") {
     elements.accountRoleMapGroup.style.display = "block";
   } else {
@@ -71,12 +54,8 @@ export function updateRoleStrategyVisibility(): void {
   }
 }
 
-/**
- * Initialize the options page
- */
 export async function initializeOptions(): Promise<void> {
   try {
-    // Get DOM elements
     elements = {
       form: document.getElementById("optionsForm") as HTMLFormElement,
       ssoSubdomain: document.getElementById("ssoSubdomain") as HTMLInputElement,
@@ -144,30 +123,23 @@ export async function initializeOptions(): Promise<void> {
   }
 }
 
-/**
- * Load settings from Chrome storage and populate form
- */
 export async function loadSettings(): Promise<ExtensionConfig> {
   try {
     const result = await chrome.storage.sync.get(DEFAULT_CONFIG);
     const config = result as ExtensionConfig;
 
-    // Populate form fields
     elements.ssoSubdomain.value = config.ssoSubdomain || "";
     elements.defaultAction.value = config.defaultAction || "clean";
     elements.showNotifications.checked = config.showNotifications !== false;
     elements.autoClosePopup.checked = config.autoClosePopup === true;
-    elements.roleSelectionStrategy.value =
-      config.roleSelectionStrategy || "current";
+    elements.roleSelectionStrategy.value = config.roleSelectionStrategy || "current";
     elements.defaultRoleName.value = config.defaultRoleName || "";
 
-    // Convert account role map to textarea format
     const accountRoleMapText = Object.entries(config.accountRoleMap || {})
       .map(([accountId, roleName]) => `${accountId}:${roleName}`)
       .join("\n");
     elements.accountRoleMap.value = accountRoleMapText;
 
-    // Update visibility of conditional fields
     updateRoleStrategyVisibility();
 
     return config;
@@ -178,9 +150,6 @@ export async function loadSettings(): Promise<ExtensionConfig> {
   }
 }
 
-/**
- * Save settings to Chrome storage
- */
 export async function saveSettings(config: ExtensionConfig): Promise<void> {
   try {
     await chrome.storage.sync.set(config);

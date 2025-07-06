@@ -7,171 +7,109 @@ export class PopupManager {
 
   async initializePopup(): Promise<void> {
     try {
-      // Check if we're on an AWS Console tab
-      const [tab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
+      const tab = await this.validateCurrentTab();
+      if (!tab) return;
 
-      if (!tab) {
-        this.showError("Unable to access current tab. Please try again.");
-        this.disableButtons();
-        return;
-      }
-
-      if (!tab.id) {
-        this.showError(
-          "Invalid tab state. Please refresh the page and try again."
-        );
-        this.disableButtons();
-        return;
-      }
-
-      if (!tab.url) {
-        this.showError(
-          "Unable to access current page URL. Please check permissions."
-        );
-        this.disableButtons();
-        return;
-      }
-
-      if (!this.isAwsConsoleUrl(tab.url)) {
-        this.showError(
-          "This extension only works on AWS Console pages. Please navigate to console.aws.amazon.com."
-        );
-        this.disableButtons();
-        return;
-      }
-
-      // Load configuration with error handling
       try {
         await this.loadConfiguration();
       } catch (configError) {
         console.error("Configuration loading failed:", configError);
-        this.showError(
-          "Failed to load extension configuration. Some features may not work properly."
-        );
-        // Continue initialization with default config
+        this.showError("Failed to load extension configuration. Some features may not work properly.");
       }
 
-      // Get session information from content script
       try {
-        await this.loadSessionInfo(tab.id);
+        await this.loadSessionInfo(tab.id!);
       } catch (sessionError) {
         console.error("Session info loading failed:", sessionError);
-        this.showError(
-          "Unable to extract AWS session information. Please ensure you are logged in and the page has fully loaded."
-        );
+        this.showError("Unable to extract AWS session information. Please ensure you are logged in and the page has fully loaded.");
         this.disableButtons();
         return;
       }
-
-      // Set up event listeners
+      
       this.setupEventListeners();
-
-      // Display current URL
       this.displayCurrentUrl();
 
-      // Show success message if everything loaded properly
       if (this.currentSessionInfo && this.config) {
         this.showSuccess("Extension loaded successfully!");
       }
     } catch (error) {
       console.error("Failed to initialize popup:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown initialization error";
-      this.showError(
-        `Failed to initialize extension: ${errorMessage}. Please refresh the page and try again.`
-      );
+      const errorMessage = error instanceof Error ? error.message : "Unknown initialization error";
+      this.showError(`Failed to initialize extension: ${errorMessage}. Please refresh the page and try again.`);
       this.disableButtons();
     }
+  }
+
+  private async validateCurrentTab(): Promise<chrome.tabs.Tab | null> {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (!tab) {
+      this.showError("Unable to access current tab. Please try again.");
+      this.disableButtons();
+      return null;
+    }
+
+    if (!tab.id) {
+      this.showError("Invalid tab state. Please refresh the page and try again.");
+      this.disableButtons();
+      return null;
+    }
+
+    if (!tab.url) {
+      this.showError("Unable to access current page URL. Please check permissions.");
+      this.disableButtons();
+      return null;
+    }
+
+    if (!this.isAwsConsoleUrl(tab.url)) {
+      this.showError("This extension only works on AWS Console pages. Please navigate to console.aws.amazon.com.");
+      this.disableButtons();
+      return null;
+    }
+
+    return tab;
   }
 
   private async loadConfiguration(): Promise<void> {
     try {
       const result = await chrome.storage.sync.get([
-        "ssoSubdomain",
-        "defaultAction",
-        "showNotifications",
-        "autoClosePopup",
-        "roleSelectionStrategy",
-        "defaultRoleName",
-        "accountRoleMap",
+        "ssoSubdomain", "defaultAction", "showNotifications", "autoClosePopup",
+        "roleSelectionStrategy", "defaultRoleName", "accountRoleMap"
       ]);
 
-      // Validate loaded configuration
       this.config = {
-        ssoSubdomain:
-          typeof result.ssoSubdomain === "string" ? result.ssoSubdomain : "",
-        defaultAction: ["clean", "deeplink"].includes(result.defaultAction)
-          ? result.defaultAction
-          : "clean",
-        showNotifications:
-          typeof result.showNotifications === "boolean"
-            ? result.showNotifications
-            : true,
-        autoClosePopup:
-          typeof result.autoClosePopup === "boolean"
-            ? result.autoClosePopup
-            : true,
-        roleSelectionStrategy: ["current", "default", "account-map"].includes(
-          result.roleSelectionStrategy
-        )
-          ? result.roleSelectionStrategy
-          : "current",
-        defaultRoleName:
-          typeof result.defaultRoleName === "string"
-            ? result.defaultRoleName
-            : "",
-        accountRoleMap:
-          typeof result.accountRoleMap === "object" &&
-          result.accountRoleMap !== null
-            ? result.accountRoleMap
-            : {},
+        ssoSubdomain: typeof result.ssoSubdomain === "string" ? result.ssoSubdomain : "",
+        defaultAction: ["clean", "deeplink"].includes(result.defaultAction) ? result.defaultAction : "clean",
+        showNotifications: typeof result.showNotifications === "boolean" ? result.showNotifications : true,
+        autoClosePopup: typeof result.autoClosePopup === "boolean" ? result.autoClosePopup : true,
+        roleSelectionStrategy: ["current", "default", "account-map"].includes(result.roleSelectionStrategy) 
+          ? result.roleSelectionStrategy : "current",
+        defaultRoleName: typeof result.defaultRoleName === "string" ? result.defaultRoleName : "",
+        accountRoleMap: typeof result.accountRoleMap === "object" && result.accountRoleMap !== null 
+          ? result.accountRoleMap : {},
       };
 
-      // Validate SSO subdomain format if provided
-      if (
-        this.config.ssoSubdomain &&
-        this.config.ssoSubdomain.trim().length > 0
-      ) {
+      if (this.config.ssoSubdomain && this.config.ssoSubdomain.trim().length > 0) {
         const subdomain = this.config.ssoSubdomain.trim();
-        if (
-          !/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$/.test(subdomain) ||
-          subdomain.length > 63
-        ) {
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$/.test(subdomain) || subdomain.length > 63) {
           console.warn("Invalid SSO subdomain format in configuration");
-          this.config.ssoSubdomain = ""; // Reset invalid subdomain
+          this.config.ssoSubdomain = "";
         }
       }
     } catch (error) {
       console.error("Failed to load configuration:", error);
-
-      // Provide default configuration
       this.config = {
-        ssoSubdomain: "",
-        defaultAction: "clean",
-        showNotifications: true,
-        autoClosePopup: true,
-        roleSelectionStrategy: "current",
-        defaultRoleName: "",
-        accountRoleMap: {},
+        ssoSubdomain: "", defaultAction: "clean", showNotifications: true, autoClosePopup: true,
+        roleSelectionStrategy: "current", defaultRoleName: "", accountRoleMap: {},
       };
-
-      throw new Error(
-        "Configuration loading failed: " +
-          (error instanceof Error ? error.message : "Storage access error")
-      );
+      throw new Error("Configuration loading failed: " + (error instanceof Error ? error.message : "Storage access error"));
     }
   }
 
   private async loadSessionInfo(tabId: number): Promise<void> {
     try {
-      const response = await chrome.tabs.sendMessage(tabId, {
-        action: "getSessionInfo",
-      });
+      const response = await chrome.tabs.sendMessage(tabId, { action: "getSessionInfo" });
 
-      // Validate response structure
       if (!response) {
         throw new Error("No response received from content script");
       }
@@ -184,25 +122,16 @@ export class PopupManager {
         throw new Error("No session data received");
       }
 
-      // Validate session data structure
       const sessionData = response.data;
-      if (
-        !sessionData.accountId ||
-        !sessionData.roleName ||
-        !sessionData.currentUrl
-      ) {
+      if (!sessionData.accountId || !sessionData.roleName || !sessionData.currentUrl) {
         throw new Error("Incomplete session information received");
       }
 
-      // Additional validation
       if (!/^\d{6,12}$/.test(sessionData.accountId)) {
         throw new Error("Invalid account ID format in session data");
       }
 
-      if (
-        typeof sessionData.roleName !== "string" ||
-        sessionData.roleName.trim().length === 0
-      ) {
+      if (typeof sessionData.roleName !== "string" || sessionData.roleName.trim().length === 0) {
         throw new Error("Invalid role name in session data");
       }
 
@@ -220,19 +149,15 @@ export class PopupManager {
     } catch (error) {
       console.error("Failed to get session info:", error);
 
-      let errorMessage =
-        "Unable to extract AWS session information from this page.";
+      let errorMessage = "Unable to extract AWS session information from this page.";
 
       if (error instanceof Error) {
         if (error.message.includes("Could not establish connection")) {
-          errorMessage =
-            "Content script not loaded. Please refresh the page and try again.";
+          errorMessage = "Content script not loaded. Please refresh the page and try again.";
         } else if (error.message.includes("Account ID")) {
-          errorMessage =
-            "Unable to find AWS account ID on this page. Please ensure you are logged into the AWS Console.";
+          errorMessage = "Unable to find AWS account ID on this page. Please ensure you are logged into the AWS Console.";
         } else if (error.message.includes("Role name")) {
-          errorMessage =
-            "Unable to extract role information. This extension works best with AWS SSO authentication.";
+          errorMessage = "Unable to extract role information. This extension works best with AWS SSO authentication.";
         } else {
           errorMessage = `Session extraction failed: ${error.message}`;
         }
