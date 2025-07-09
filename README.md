@@ -14,6 +14,7 @@ A Chrome extension that simplifies sharing AWS Console resource links by providi
 ## 📋 Table of Contents
 
 - [Installation](#installation)
+- [Screenshots](#screenshots)
 - [Quick Start](#quick-start)
 - [Features Overview](#features-overview)
 - [Role Selection Strategies](#role-selection-strategies)
@@ -41,6 +42,35 @@ A Chrome extension that simplifies sharing AWS Console resource links by providi
    - Click the puzzle piece icon in Chrome's toolbar
    - Find "AWS Console Link Sharer" and click the pin icon
 
+## 📸 Screenshots
+
+### Main Extension Interface
+
+The extension popup shows your current AWS Console URL and provides two main actions:
+
+![Extension Popup](docs/images/extension.png)
+
+**Key Features Shown:**
+- Current URL display with account ID redacted for privacy
+- **Clean URL** button to remove account-specific prefixes
+- **Generate Deep Link** button to create AWS SSO deep links
+- Generated URL output with copy functionality
+- Success confirmation message
+
+### Settings Configuration
+
+Configure the extension to work with your organization's AWS SSO setup:
+
+![Extension Settings](docs/images/settings.png)
+
+**Configuration Options:**
+- **AWS SSO Subdomain**: Your organization's SSO domain (e.g., "acme" for acme.awsapps.com)
+- **Default Action**: Choose which button is highlighted by default
+- **Role Selection Strategy**: Control how roles are determined for deep links
+- **Default Role Name**: Fallback role for deep link generation
+- **Account-Role Mapping**: Map specific accounts to specific roles
+- **Notification Settings**: Control success/error message display
+
 ## 🚀 Quick Start
 
 ### First-Time Setup
@@ -51,6 +81,8 @@ A Chrome extension that simplifies sharing AWS Console resource links by providi
    - Example: If your SSO URL is `https://mycompany.awsapps.com`, enter `mycompany`
    - Click **"Save Settings"**
 
+![Extension Settings](docs/images/settings.png)
+
 ### Basic Usage
 
 1. **Navigate to any AWS Console page**
@@ -59,6 +91,8 @@ A Chrome extension that simplifies sharing AWS Console resource links by providi
    - **Clean URL**: Remove account-specific prefixes
    - **Generate Deep Link**: Create cross-account SSO link
 4. **URL is automatically copied** to your clipboard ✨
+
+![Extension Popup](docs/images/extension.png)
 
 ## 🎯 Features Overview
 
