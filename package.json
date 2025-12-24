@@ -2,6 +2,22 @@
   "name": "aws-console-link-sharer",
   "version": "1.0.0",
   "description": "Chrome extension for sharing AWS Console links with URL cleaning and deep link generation",
+  "author": "ryancormack",
+  "homepage": "https://github.com/ryancormack/aws-console-share-extension",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryancormack/aws-console-share-extension.git"
+  },
+  "keywords": [
+    "aws",
+    "aws-console",
+    "chrome-extension",
+    "browser-extension",
+    "aws-sso",
+    "deep-links",
+    "url-cleaner",
+    "aws-tools"
+  ],
   "scripts": {
     "build": "npm run clean && tsc && npm run copy-assets",
     "copy-assets": "mkdir -p dist/popup dist/options && cp src/manifest.json dist/ && cp -r src/icons dist/ && cp src/popup/popup.html dist/popup/ && cp src/popup/popup.css dist/popup/ && cp src/options/options.html dist/options/ && cp src/options/options.css dist/options/",

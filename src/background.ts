@@ -78,7 +78,7 @@ export function initializeExtension(): void {
     return true;
   });
 
-  chrome.runtime.onInstalled.addListener((details) => {
+  chrome.runtime.onInstalled.addListener((_details) => {
     // Extension installed or updated
     // No action needed - ready to use
   });
