@@ -44,6 +44,7 @@ export function extractAccountId(): string | null {
     const urlMatch = window.location.href.match(/https:\/\/(\d{12})-[a-z0-9]+\./);
     return urlMatch ? urlMatch[1] : null;
   } catch (error) {
+    console.error("Error extracting account ID:", error);
     return null;
   }
 }
@@ -81,6 +82,7 @@ export function extractRoleName(): string | null {
 
     return null;
   } catch (error) {
+    console.error("Error extracting role name:", error);
     return null;
   }
 }
@@ -215,4 +217,5 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 });
 
-// Content script initialized and ready
+// Initialize content script
+console.log("AWS Console Link Sharer content script loaded on:", window.location.hostname);

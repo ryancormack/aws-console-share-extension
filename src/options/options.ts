@@ -116,7 +116,7 @@ export async function initializeOptions(): Promise<void> {
     // Load and display current settings
     await loadSettings();
 
-    // Options page initialized
+    console.log("Options page initialized successfully");
   } catch (error) {
     console.error("Failed to initialize options page:", error);
     showStatus("Failed to initialize options page", "error");
@@ -154,6 +154,7 @@ export async function saveSettings(config: ExtensionConfig): Promise<void> {
   try {
     await chrome.storage.sync.set(config);
     showStatus("Settings saved successfully", "success");
+    console.log("Settings saved:", config);
   } catch (error) {
     console.error("Failed to save settings:", error);
     showStatus("Failed to save settings", "error");

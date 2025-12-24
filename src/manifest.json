@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AWS Console Link Sharer",
+  "short_name": "AWS Link Sharer",
   "version": "1.0.0",
   "description": "Clean AWS Console URLs and generate deep links for cross-account access",
   "author": "ryancormack",

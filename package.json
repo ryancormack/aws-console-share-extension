@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Chrome extension for sharing AWS Console links with URL cleaning and deep link generation",
   "author": "ryancormack",
+  "license": "MIT",
   "homepage": "https://github.com/ryancormack/aws-console-share-extension",
   "repository": {
     "type": "git",
