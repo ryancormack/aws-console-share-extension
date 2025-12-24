@@ -60,14 +60,12 @@ export async function validateAwsConsoleTab(tabId: number): Promise<boolean> {
     const tab = await chrome.tabs.get(tabId);
     return tab?.url ? validateAwsConsoleUrl(tab.url) : false;
   } catch (error) {
-    console.error('Error validating AWS Console tab:', error);
+    // Tab validation failed - return false
     return false;
   }
 }
 
 export function initializeExtension(): void {
-  console.log('AWS Console Link Sharer extension initialized');
-  
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleMessage(message, sender)
       .then(response => sendResponse(response))
@@ -81,11 +79,8 @@ export function initializeExtension(): void {
   });
 
   chrome.runtime.onInstalled.addListener((details) => {
-    if (details.reason === 'install') {
-      console.log('AWS Console Link Sharer extension installed');
-    } else if (details.reason === 'update') {
-      console.log('AWS Console Link Sharer extension updated');
-    }
+    // Extension installed or updated
+    // No action needed - ready to use
   });
 }
 

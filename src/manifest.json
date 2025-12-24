@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
   "name": "AWS Console Link Sharer",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Clean AWS Console URLs and generate deep links for cross-account access",
+  "author": "ryancormack",
+  "homepage_url": "https://github.com/ryancormack/aws-console-share-extension",
   
   "permissions": [
     "activeTab",
@@ -43,7 +45,5 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  },
-  
-  "web_accessible_resources": []
+  }
 }

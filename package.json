@@ -4,7 +4,7 @@
   "description": "Chrome extension for sharing AWS Console links with URL cleaning and deep link generation",
   "scripts": {
     "build": "npm run clean && tsc && npm run copy-assets",
-    "copy-assets": "cp src/manifest.json dist/ && cp -r src/icons dist/ && cp src/popup/popup.html dist/popup/ && cp src/popup/popup.css dist/popup/ && cp src/options/options.html dist/options/ && cp src/options/options.css dist/options/",
+    "copy-assets": "mkdir -p dist/popup dist/options && cp src/manifest.json dist/ && cp -r src/icons dist/ && cp src/popup/popup.html dist/popup/ && cp src/popup/popup.css dist/popup/ && cp src/options/options.html dist/options/ && cp src/options/options.css dist/options/",
     "watch": "tsc --watch",
     "tsc": "tsc --noEmit",
     "clean": "rm -rf dist",
