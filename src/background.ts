@@ -80,10 +80,10 @@ export function initializeExtension(): void {
     return true;
   });
 
-  chrome.runtime.onInstalled.addListener((details) => {
-    if (details.reason === 'install') {
+  chrome.runtime.onInstalled.addListener((_details) => {
+    if (_details.reason === 'install') {
       console.log('AWS Console Link Sharer extension installed');
-    } else if (details.reason === 'update') {
+    } else if (_details.reason === 'update') {
       console.log('AWS Console Link Sharer extension updated');
     }
   });

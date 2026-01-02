@@ -1,5 +1,9 @@
 # AWS Console Link Sharer
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ryancormack/aws-console-share-extension)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+
 A Chrome extension that simplifies sharing AWS Console resource links by providing URL cleaning and deep link generation capabilities. Perfect for teams working across multiple AWS accounts and roles.
 
 ## 🚀 Features
@@ -24,6 +28,10 @@ A Chrome extension that simplifies sharing AWS Console resource links by providi
 - [Development](#development)
 
 ## 🔧 Installation
+
+### From Chrome Web Store
+
+*Coming soon* - Extension will be available on the Chrome Web Store.
 
 ### From Source (Developer Mode)
 
@@ -300,15 +308,24 @@ Account-Role Mapping:
 ## 🛠️ Development
 
 ### Prerequisites
-- Node.js 20+
-- npm
-- Chrome browser
+- Node.js 20+ and npm
+- Chrome browser (version 88 or higher for Manifest V3 support)
+- Git
+
+### Browser Compatibility
+
+This extension uses Manifest V3 and is compatible with:
+- ✅ Google Chrome (version 88+)
+- ✅ Microsoft Edge (version 88+)
+- ✅ Other Chromium-based browsers with Manifest V3 support
+
+**Note**: This extension is specifically designed for AWS Console usage and requires AWS SSO for deep link functionality.
 
 ### Setup
 ```bash
 # Clone repository
-git clone <repository-url>
-cd aws-console-link-sharer
+git clone https://github.com/ryancormack/aws-console-share-extension.git
+cd aws-console-share-extension
 
 # Install dependencies
 npm install
@@ -364,23 +381,57 @@ npm run build
 npm run copy-assets
 ```
 
+## 🔒 Security & Privacy
+
+This extension takes your security and privacy seriously:
+
+- **Local Storage Only**: All settings are stored locally in your browser using Chrome's storage API
+- **No Data Collection**: The extension does not collect, transmit, or store any user data externally
+- **Minimal Permissions**: Requests only the essential permissions needed for functionality:
+  - `activeTab`: To read the current AWS Console URL only when you click the extension
+  - `storage`: To save your preferences locally
+  - `scripting`: To extract session information from AWS Console pages
+- **Limited Scope**: Only activates on AWS Console domains (`*.console.aws.amazon.com`)
+- **No Network Calls**: The extension does not make any external network requests
+- **Open Source**: Full source code is available for review
+
+### What Data Does the Extension Access?
+
+The extension only accesses:
+1. **Current URL**: To clean or generate deep links
+2. **AWS Session Info**: Account ID and role name from the AWS Console page (never stored or transmitted)
+3. **User Preferences**: Your SSO subdomain, default role, and other settings (stored locally only)
+
+### Permissions Breakdown
+
+| Permission | Why It's Needed | When It's Used |
+|------------|----------------|----------------|
+| `activeTab` | Read current AWS Console URL | Only when you click the extension icon |
+| `storage` | Save your settings locally | When you update settings |
+| `scripting` | Extract AWS account/role info | When generating deep links |
+| `host_permissions` | Access AWS Console pages | Limited to `*.console.aws.amazon.com` only |
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
-1. Fork the repository
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository at [github.com/ryancormack/aws-console-share-extension](https://github.com/ryancormack/aws-console-share-extension)
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes and test thoroughly
+4. Run tests: `npm test`
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## 📞 Support
 
 If you encounter issues or have questions:
 
-1. Search existing [GitHub Issues](../../issues)
+1. Search existing [GitHub Issues](https://github.com/ryancormack/aws-console-share-extension/issues)
 2. Create a new issue with:
    - Chrome version
    - Extension version
